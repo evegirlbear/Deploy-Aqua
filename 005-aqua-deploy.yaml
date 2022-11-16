@@ -1,0 +1,65 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: aqua-gateway
+  name: aqua-gateway
+  namespace: aqua
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aqua-gateway
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: aqua-gateway
+      name: aqua-gateway
+    spec:
+      containers:
+      - env:
+        - name: SCALOCK_DBPASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: aqua-db
+        - name: SCALOCK_AUDIT_DBPASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: aqua-audit-db
+        envFrom:
+        - configMapRef:
+            name: aqua-csp-server-config
+        image: registry.aquasec.com/gateway:6.2.22087
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8082
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        name: aqua-gateway
+        ports:
+        - containerPort: 3622
+          protocol: TCP
+        - containerPort: 8443
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          tcpSocket:
+            port: 8443
+        resources: {}
+      restartPolicy: Always
+      securityContext:
+        fsGroup: 11433
+        runAsGroup: 11433
+        runAsUser: 11431
+      serviceAccount: aqua-sa
+      serviceAccountName: aqua-sa
+status: {}
